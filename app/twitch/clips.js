@@ -1,10 +1,11 @@
 'use-strict';
-let bluebird = require('bluebird');
-let nconf = require('nconf');
-let req = bluebird.promisify(require('request'), { multiArgs: true });
-bluebird.promisifyAll(req);
+const bluebird = require('bluebird');
+const nconf = require('nconf');
+const fs = require('fs');
+const req = require('request');
 
 function getClips() {
+  
   let game = 'League of Legends'
   let limit = 10;
   let period = 'day';
@@ -19,7 +20,11 @@ function getClips() {
       "Accept": "application/vnd.twitchtv.v5+json"
     }
   };
-  return req(options);
+  return new bluebird.Promise((resolve, reject) => {
+    req(options, function (error, response, body) {
+      resolve(body);
+    });
+  });
 }
 function getFileName(clip) {
   let img = clip.thumbnails.medium;
@@ -27,10 +32,10 @@ function getFileName(clip) {
   let end = img.lastIndexOf('-preview-');
   return img.substring(start, end) + ".mp4";
 }
-//League of Legends
+
 function getClipFiles() {
   return getClips()
-    .spread((res, body) => body.clips)
+    .then(body => body.clips)
     .map(clip => ({
         id: clip.tracking_id,
         title: clip.title,
@@ -41,7 +46,12 @@ function getClipFiles() {
       }))
 }
 
-  module.exports = {
-    getClips,
-    getClipFiles,
-  }
+function saveClip(name) {
+  let url = `https://clips-media-assets2.twitch.tv/${name}`;
+  return req(url).pipe(fs.createWriteStream(`../../data/${name}.mp4`));
+}
+module.exports = {
+  getClips,
+  getClipFiles,
+  saveClip,
+}
