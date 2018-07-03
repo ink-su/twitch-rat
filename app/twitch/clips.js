@@ -1,11 +1,13 @@
-'use-strict';
+'use strict';
 const bluebird = require('bluebird');
 const nconf = require('nconf');
 const fs = require('fs');
 const req = require('request');
 
+/**
+ * Returns a list of top clips on twitch
+ */
 function getClips() {
-  
   let game = 'League of Legends'
   let limit = 10;
   let period = 'day';
@@ -26,6 +28,11 @@ function getClips() {
     });
   });
 }
+
+/**
+ * Returns the filename of a clip
+ * @param {clip} clip 
+ */
 function getFileName(clip) {
   let img = clip.thumbnails.medium;
   let start = img.lastIndexOf('\/') + 1;
@@ -33,6 +40,9 @@ function getFileName(clip) {
   return img.substring(start, end) + ".mp4";
 }
 
+/**
+ * Get a list of clips in the proper clip format
+ */
 function getClipFiles() {
   return getClips()
     .then(body => body.clips)
@@ -45,11 +55,15 @@ function getClipFiles() {
         filename: getFileName(clip),
       }))
 }
-
+/**
+ * Download clip to data directory
+ * @param {string} name  
+ */
 function saveClip(name) {
   let url = `https://clips-media-assets2.twitch.tv/${name}`;
-  return req(url).pipe(fs.createWriteStream(`../../data/${name}.mp4`));
+  return req(url).pipe(fs.createWriteStream(__dirname + `/../../data/${name}.mp4`));
 }
+
 module.exports = {
   getClips,
   getClipFiles,
